@@ -49,9 +49,12 @@ class DashboardTab(ctk.CTkFrame):
         self.total_var = ctk.StringVar(value="—")
         self.used_var = ctk.StringVar(value="—")
         self.available_var = ctk.StringVar(value="—")
-        self._add_metric(metrics, 0, "TOTAL RAM", self.total_var, "Installed physical memory", COLORS["blue"])
-        self._add_metric(metrics, 1, "IN USE", self.used_var, "Currently occupied", COLORS["pink"])
-        self._add_metric(metrics, 2, "AVAILABLE", self.available_var, "Ready for applications", COLORS["mint"])
+        self.total_hint_var = ctk.StringVar(value="—")
+        self.used_hint_var = ctk.StringVar(value="—")
+        self.available_hint_var = ctk.StringVar(value="—")
+        self._add_metric(metrics, 0, "TOTAL RAM", self.total_var, self.total_hint_var, COLORS["blue"])
+        self._add_metric(metrics, 1, "IN USE", self.used_var, self.used_hint_var, COLORS["pink"])
+        self._add_metric(metrics, 2, "AVAILABLE", self.available_var, self.available_hint_var, COLORS["mint"])
 
         self._build_history_panel()
         self._build_right_rail()
@@ -76,7 +79,7 @@ class DashboardTab(ctk.CTkFrame):
             font=ctk.CTkFont(size=19, weight="bold"), anchor="w",
         ).pack(anchor="w", pady=(2, 0))
         ctk.CTkLabel(
-            text, text=hint, text_color=COLORS["muted"],
+            text, textvariable=hint, text_color=COLORS["muted"],
             font=ctk.CTkFont(size=9), anchor="w",
         ).pack(anchor="w", pady=(1, 0))
 
@@ -95,9 +98,10 @@ class DashboardTab(ctk.CTkFrame):
             header, text="RAM usage history", text_color=COLORS["text"],
             font=ctk.CTkFont(size=13, weight="bold"), anchor="w",
         ).pack(side="left")
+        self.history_summary_var = ctk.StringVar(value="Now: —")
         ctk.CTkLabel(
-            header, text="●  Usage %", text_color=COLORS["blue"],
-            font=ctk.CTkFont(size=10, weight="bold"),
+            header, textvariable=self.history_summary_var, text_color=COLORS["blue"],
+            font=ctk.CTkFont(size=9, weight="bold"),
         ).pack(side="right")
 
         self.figure = Figure(figsize=(5.2, 3.3), dpi=100, tight_layout=True)
@@ -119,22 +123,23 @@ class DashboardTab(ctk.CTkFrame):
         )
         distribution.grid(row=0, column=0, sticky="nsew", pady=(0, 8))
         distribution.grid_columnconfigure(0, weight=1)
-        distribution.grid_rowconfigure(1, weight=1)
+        distribution.grid_rowconfigure(2, weight=1)
         ctk.CTkLabel(
             distribution, text="Memory distribution", text_color=COLORS["text"],
             font=ctk.CTkFont(size=13, weight="bold"), anchor="w",
         ).grid(row=0, column=0, sticky="ew", padx=17, pady=(15, 0))
 
-        self.donut_figure = Figure(figsize=(2.2, 2.0), dpi=100, tight_layout=True)
+        self.available_legend_var = ctk.StringVar(value="Available: —")
+        ctk.CTkLabel(
+            distribution, textvariable=self.available_legend_var,
+            text_color=COLORS["pink"], font=ctk.CTkFont(size=9), anchor="w",
+        ).grid(row=1, column=0, sticky="ew", padx=17, pady=(4, 0))
+
+        self.donut_figure = Figure(figsize=(1.9, 1.25), dpi=100, tight_layout=True)
         self.donut_figure.patch.set_facecolor(COLORS["surface"])
         self.donut_ax = self.donut_figure.add_subplot(111)
         self.donut_canvas = FigureCanvasTkAgg(self.donut_figure, master=distribution)
-        self.donut_canvas.get_tk_widget().grid(row=1, column=0, sticky="nsew", padx=7, pady=(0, 0))
-
-        legend = ctk.CTkFrame(distribution, fg_color="transparent")
-        legend.grid(row=2, column=0, sticky="ew", padx=15, pady=(0, 12))
-        ctk.CTkLabel(legend, text="●  In use", text_color=COLORS["blue"], font=ctk.CTkFont(size=10)).pack(side="left")
-        ctk.CTkLabel(legend, text="●  Available", text_color=COLORS["pink"], font=ctk.CTkFont(size=10)).pack(side="right")
+        self.donut_canvas.get_tk_widget().grid(row=2, column=0, sticky="nsew", padx=7, pady=(0, 0))
 
         actions = ctk.CTkFrame(
             rail, fg_color=COLORS["surface"], corner_radius=16,
@@ -173,17 +178,29 @@ class DashboardTab(ctk.CTkFrame):
         self.available_bytes = min(memory.available, self.total_bytes)
         self.used_bytes = max(self.total_bytes - self.available_bytes, 0)
         self.percent = (self.used_bytes / self.total_bytes * 100) if self.total_bytes else 0.0
-        self.history.append(self.percent)
+        self.history.append((self.used_bytes, self.total_bytes))
 
-        self.total_var.set(f"{self._to_gb(self.total_bytes):.2f} GB")
-        self.used_var.set(f"{self.percent:.1f}%")
-        self.available_var.set(f"{self._to_gb(self.available_bytes):.2f} GB")
+        total_gb = self._to_gb(self.total_bytes)
+        used_gb = self._to_gb(self.used_bytes)
+        available_gb = self._to_gb(self.available_bytes)
+        available_percent = max(100.0 - self.percent, 0.0)
+        self.total_var.set(f"{total_gb:.2f} GB")
+        self.used_var.set(f"{used_gb:.2f} GB")
+        self.available_var.set(f"{available_gb:.2f} GB")
+        self.total_hint_var.set("100.0% of installed RAM")
+        self.used_hint_var.set(f"{self.percent:.1f}% occupied")
+        self.available_hint_var.set(f"{available_percent:.1f}% free")
+        self.history_summary_var.set(f"Now: {used_gb:.2f} GB · {self.percent:.1f}%")
+        self.available_legend_var.set(
+            f"Available: {available_gb:.2f} GB · {available_percent:.1f}%"
+        )
         self._draw_history()
         self._draw_donut()
 
     def _draw_history(self):
         self.history_ax.clear()
-        values = list(self.history)
+        samples = list(self.history)
+        values = [used / total * 100 if total else 0.0 for used, total in samples]
         positions = list(range(1, len(values) + 1))
         if values:
             self.history_ax.plot(positions, values, color=COLORS["blue"], linewidth=2.4)
@@ -197,13 +214,16 @@ class DashboardTab(ctk.CTkFrame):
             )
         self.history_ax.set_ylim(0, 100)
         self.history_ax.set_xlim(0.5, len(values) + 0.5)
-        self.history_ax.set_yticks((0, 25, 50, 75, 100))
+        ticks = (0, 25, 50, 75, 100)
+        total_gb = self._to_gb(self.total_bytes)
+        tick_labels = [f"{tick}%\n{total_gb * tick / 100:.2f} GB" for tick in ticks]
+        self.history_ax.set_yticks(ticks, tick_labels)
         self.history_ax.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=6))
-        self.history_ax.set_ylabel("Memory in use (%)", fontsize=9, color=COLORS["muted"])
+        self.history_ax.set_ylabel("In use (%) · GB", fontsize=9, color=COLORS["muted"])
         self.history_ax.set_xlabel("Recent samples · one every 2 seconds", fontsize=9, color=COLORS["muted"])
         self.history_ax.grid(axis="y", color=COLORS["border"], linewidth=0.8)
         self.history_ax.set_facecolor(COLORS["surface"])
-        self.history_ax.tick_params(colors=COLORS["muted"], labelsize=8, length=0)
+        self.history_ax.tick_params(colors=COLORS["muted"], labelsize=7, length=0)
         for spine in self.history_ax.spines.values():
             spine.set_visible(False)
         self.history_canvas.draw_idle()
@@ -219,8 +239,8 @@ class DashboardTab(ctk.CTkFrame):
         )
         self.donut_ax.text(0, 0.04, f"{self.percent:.1f}%", ha="center", va="center",
                            color=COLORS["text"], fontsize=16, fontweight="bold")
-        self.donut_ax.text(0, -0.18, "in use", ha="center", va="center",
-                           color=COLORS["muted"], fontsize=8)
+        self.donut_ax.text(0, -0.25, f"{self._to_gb(self.used_bytes):.2f} GB",
+                           ha="center", va="center", color=COLORS["muted"], fontsize=7)
         self.donut_ax.axis("equal")
         self.donut_canvas.draw_idle()
 
@@ -228,7 +248,8 @@ class DashboardTab(ctk.CTkFrame):
         collected = gc.collect()
         self.refresh()
         self.status_var.set(
-            f"Python cleaned {collected} objects; system RAM may stay the same."
+            f"Cleaned {collected} Python objects. RAM now: "
+            f"{self._to_gb(self.used_bytes):.2f} GB · {self.percent:.1f}% in use."
         )
 
     def _auto_refresh(self):

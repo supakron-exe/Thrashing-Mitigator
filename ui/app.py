@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import customtkinter as ctk
+from PIL import Image, ImageTk
 
 from ui.dashboard_tab import DashboardTab
 from ui.theme import COLORS, apply_theme
@@ -19,6 +22,7 @@ class App(ctk.CTk):
     def __init__(self):
         apply_theme()
         super().__init__()
+        self.sidebar_logo = self._load_logo()
         self.title("Thrashing Mitigator")
         self.geometry("920x680")
         self.minsize(900, 640)
@@ -31,6 +35,37 @@ class App(ctk.CTk):
         self._build_pages()
         self._show_page("Overview")
 
+    def _load_logo(self):
+        logo_path = (
+            Path(__file__).resolve().parent.parent
+            / "logo"
+            / "Gemini_Generated_Image_7dmlu97dmlu97dml.png"
+        )
+        if not logo_path.is_file():
+            return None
+
+        with Image.open(logo_path) as source:
+            logo = source.convert("RGBA")
+        visible_bounds = logo.getchannel("A").getbbox()
+        if visible_bounds:
+            logo = logo.crop(visible_bounds)
+
+        self._window_icon = ImageTk.PhotoImage(
+            self._fit_image(logo, (32, 32)), master=self,
+        )
+        self.iconphoto(True, self._window_icon)
+        return ctk.CTkImage(
+            light_image=logo,
+            dark_image=logo,
+            size=(42, 37),
+        )
+
+    @staticmethod
+    def _fit_image(image, bounds):
+        fitted = image.copy()
+        fitted.thumbnail(bounds, Image.Resampling.LANCZOS)
+        return fitted
+
     def _build_sidebar(self):
         sidebar = ctk.CTkFrame(self, width=188, corner_radius=0, fg_color=COLORS["sidebar"])
         sidebar.grid(row=0, column=0, sticky="nsew")
@@ -39,26 +74,39 @@ class App(ctk.CTk):
 
         brand = ctk.CTkFrame(sidebar, fg_color="transparent")
         brand.pack(fill="x", padx=20, pady=(24, 22))
-        ctk.CTkLabel(
-            brand,
-            text="TM",
-            width=42,
-            height=42,
-            corner_radius=13,
-            fg_color=COLORS["blue"],
-            text_color="white",
-            font=ctk.CTkFont(size=15, weight="bold"),
-        ).pack(side="left")
-        brand_text = ctk.CTkFrame(brand, fg_color="transparent")
+        if self.sidebar_logo is not None:
+            ctk.CTkLabel(
+                brand,
+                text="",
+                image=self.sidebar_logo,
+                width=42,
+                height=42,
+                fg_color="transparent",
+            ).pack(side="left")
+        else:
+            ctk.CTkLabel(
+                brand,
+                text="TM",
+                width=42,
+                height=42,
+                corner_radius=13,
+                fg_color=COLORS["blue"],
+                text_color="white",
+                font=ctk.CTkFont(size=15, weight="bold"),
+            ).pack(side="left")
+        brand_text = ctk.CTkFrame(
+            brand, width=96, height=58, fg_color="transparent",
+        )
         brand_text.pack(side="left", padx=(10, 0))
+        brand_text.pack_propagate(False)
         ctk.CTkLabel(
             brand_text, text="Thrashing", text_color=COLORS["text"],
             font=ctk.CTkFont(size=15, weight="bold"), anchor="w",
         ).pack(anchor="w")
         ctk.CTkLabel(
             brand_text, text="MITIGATOR", text_color=COLORS["muted"],
-            font=ctk.CTkFont(size=9, weight="bold"), anchor="w",
-        ).pack(anchor="w", pady=(1, 0))
+            font=ctk.CTkFont(size=9, weight="bold"), anchor="w", width=96, height=16,
+        ).place(x=0, y=22)
 
         ctk.CTkLabel(
             sidebar, text="WORKSPACE", text_color=COLORS["muted"],
@@ -105,7 +153,7 @@ class App(ctk.CTk):
 
     def _build_main_area(self):
         main = ctk.CTkFrame(self, fg_color=COLORS["background"], corner_radius=0)
-        main.grid(row=0, column=1, sticky="nsew", padx=(0, 16), pady=12)
+        main.grid(row=0, column=1, sticky="nsew", padx=(16, 16), pady=12)
         main.grid_rowconfigure(1, weight=1)
         main.grid_columnconfigure(0, weight=1)
 
