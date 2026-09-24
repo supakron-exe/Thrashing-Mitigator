@@ -113,7 +113,7 @@ def compact(blocks:list) -> list:
 | Day 6 | อัดพาร์ท simulator + เตรียมตอบคำถาม | สไลด์ 10 หน้า + Demo.mp4 | มีไฟล์ส่งครบใน Drive |
 | Day 7 | Freeze + ซ้อมพาร์ท 3 นาที | ซ้อมพาร์ท 4 นาที + เช็คโน้ตบุ๊ก | พูดจบ 7-8 นาที |
 
-เจอกันทุกคืน 21:00 30 นาที เปิด `main.py` ด้วยกัน ไม่ติดห้ามนอน
+เจอกันทุกคืน 22:00 30 นาที เปิด `main.py` ด้วยกัน ไม่ติดห้ามนอน
 
 Milestone บังคับ:
 - คืน Day 3: ตารางขึ้นจอได้
@@ -156,10 +156,56 @@ Milestone บังคับ:
 
 ---
 
-## 8. Git + ส่งงาน
+## 8. Git 3 Branch: `main / beam / team` + ส่งงาน
 
-- Branch: `main` อย่างเดียวพอ (เวลาน้อย) commit ทุกคืน `Day1-beam-sim-fifo` ฯลฯ
+### 8.1 แต่ละ Branch คืออะไร
+- `main` = ของเสถียร เปิด `python main.py` ต้องติดเสมอ **ห้าม push ตรง** เอาไว้เดโม + ส่งอาจารย์
+- `beam` = ของบีม แตะได้แค่ `core/` (ยกเว้น `core/optimizer.py`) + สไลด์ทฤษฎี ห้ามแตะ `ui/`
+- `team` = ของทีม แตะได้แค่ `ui/` + `main.py` + `requirements.txt` + `core/optimizer.py` + สไลด์/วิดีโอ ห้ามแตะ `core/simulator.py`, `paging.py`, `monitor.py`, `detector.py`, `partition.py` (นอกจากบีมบอก)
+
+| ไฟล์/โฟลเดอร์ | beam | team | main |
+|---|---|---|---|
+| `core/simulator.py`, `paging.py`, `monitor.py`, `detector.py`, `partition.py` | ✅ เขียนได้ | ❌ อ่านอย่างเดียว | รับผ่าน merge |
+| `core/optimizer.py` | ❌ | ✅ เขียนได้ | รับผ่าน merge |
+| `ui/`, `main.py`, `requirements.txt` | ❌ | ✅ เขียนได้ | รับผ่าน merge |
+| สไลด์/วิดีโอ | ทฤษฎี 4 หน้า | ประกอบ + ตัดต่อ | ไฟล์ส่ง |
+
+แยกแบบนี้ merge แทบไม่ชนกัน
+
+### 8.2 เริ่มครั้งเดียว (ใครก็ได้ทำ)
+```
+git init
+git checkout -b main
+git checkout -b beam
+git checkout -b team
+git push -u origin main beam team
+```
+
+### 8.3 งานประจำวัน
+- บีม: `git checkout beam` → เขียน → `git add core/` → `git commit -m "Day1-beam-sim-fifo-15"` → `git push origin beam`
+- ทีม: `git checkout team` → เขียน → `git add ui/ main.py` → `git commit -m "Day1-team-dashboard-pie"` → `git push origin team`
+- ชื่อ commit ฟิกซ์: `DayX-beam-อะไร` / `DayX-team-อะไร`
+
+### 8.4 รวมกันทุกคืน 21:00 (30 นาที ห้ามข้าม)
+```
+git checkout main
+git merge beam --no-ff -m "merge Day1 beam"
+git merge team --no-ff -m "merge Day1 team"
+python main.py
+git push origin main
+git checkout beam
+git merge main
+git checkout team
+git merge main
+```
+- `python main.py` ต้องติด ถ้าพังแก้บน `main` ทันทีแล้ว merge กลับทั้ง 2 branch
+- ถ้ามี GitHub: เปิด PR `beam -> main` + `team -> main` ให้อีกคนกด Review 1 นาทีก็พอ
+- กฎ: ห้าม `push --force`, ห้าม commit ตรง `main`, จะเปลี่ยนชื่อฟังก์ชันสัญญา (`simulate`, `get_memory_stats`, ฯลฯ) ต้องบอกอีกคนก่อน 22:00
+- Day 6 Freeze: รับแต่แก้บั๊ก ห้าม merge ฟีเจอร์ใหม่เข้า `main`
+
+### 8.5 ส่งงาน 9 ต.ค.
 - ไฟล์ส่ง: `ThrashingMitigator_Demo.mp4` + `ThrashingMitigator_Slides.pptx/pdf` + ลิงก์ repo
-- เช็คก่อนส่ง: ชื่อไฟล์ไม่มีภาษาไทยกันเพี้ยน, วิดีโอเปิดในมือถือได้
+- ก่อนส่ง: `git tag v1.0-present` ที่ `main` กันหาย
+- เช็ค: ชื่อไฟล์ไม่มีภาษาไทยกันเพี้ยน, วิดีโอเปิดในมือถือได้
 
 อ่านจบแล้วแยกไปอ่านไฟล์ของตัวเอง: `Beam-Roadmap.md` / `Team-Roadmap.md`
