@@ -185,7 +185,7 @@ res = simulate(ref, frames, algo)
 
 ### ขั้น 4.1: ครึ่งบน Paging (2 ชม.)
 `ui/paging_partition_tab.py` แบ่ง `top/bottom`:
-- แถว 1: Entry `p,d,f,size` (default 1,478,6,4) + ปุ่ม `=` + Label physical → เรียก `logical_to_physical` **ต้องได้ 6622**
+- แถว 1: Entry `p,d,f,size` (default 1,478,6,1024) + ปุ่ม `=` + Label physical → เรียก `logical_to_physical` **ต้องได้ 6622** (6*1024+478)
 - แถว 2: Entry `addr,offset_bits` (default 1502,10) + ปุ่ม Split + Label `p,d` → เรียก `split_bits` **ต้องได้ p1,d478**
 
 ### ขั้น 4.2: ครึ่งล่าง Partition (2 ชม.)
