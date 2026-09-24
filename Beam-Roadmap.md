@@ -182,7 +182,7 @@ def split_bits(addr, offset_bits):
 ```
 
 เทส:
-- `logical_to_physical(1,478,6,4) == 6622`
+- `logical_to_physical(1,478,6,1024) == 6622` (6*1024+478)
 - `split_bits(1502,10) == (1,478)` (เพราะ 1502 = 1*1024+478)
 
 **Done Day 2 =** `PASS Day2` + 6622 ถูก + push 2 ไฟล์
