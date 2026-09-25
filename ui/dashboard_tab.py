@@ -1,4 +1,3 @@
-import gc
 from collections import deque
 
 import customtkinter as ctk
@@ -9,6 +8,7 @@ from matplotlib.ticker import MaxNLocator
 
 from ui.theme import ANIM, COLORS, get_font
 from ui import anim as anim_h
+from core.optimizer import optimize
 
 
 class DashboardTab(ctk.CTkFrame):
@@ -197,6 +197,17 @@ class DashboardTab(ctk.CTkFrame):
             font=get_font("tiny"), wraplength=170, justify="left", anchor="w",
         )
         self.status_label.pack(fill="x", padx=15, pady=(4, 2))
+        options = ctk.CTkFrame(actions, fg_color="transparent")
+        options.pack(fill="x", padx=14, pady=(4, 0))
+        ctk.CTkLabel(options, text="Threshold %", text_color=COLORS["muted"],
+                     font=get_font("tiny")).pack(side="left")
+        self.threshold_var = ctk.StringVar(value="20")
+        ctk.CTkEntry(options, textvariable=self.threshold_var, width=48, height=24,
+                     font=get_font("tiny")).pack(side="left", padx=(6, 0))
+        self.idle_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(actions, text="Run when CPU idle", variable=self.idle_var,
+                        text_color=COLORS["muted"], font=get_font("tiny"),
+                        checkbox_width=16, checkbox_height=16).pack(anchor="w", padx=14, pady=(3, 5))
 
     @staticmethod
     def _to_gb(byte_count):
@@ -333,17 +344,18 @@ class DashboardTab(ctk.CTkFrame):
             self.optimize_btn.configure(state="disabled")
         except Exception:
             pass
-        collected = gc.collect()
-        self.refresh()
-        self._flash_action_success()
-        self.status_var.set(
-            f"Optimized \u00b7 {self.percent:.1f}% in use."
-        )
         try:
-            if self.mascot is not None:
-                self.mascot.celebrate(f"Cleaned {collected} objects!")
-        except Exception:
-            pass
+            freed_mb = optimize("free")
+            self.refresh()
+            self._flash_action_success()
+            self.status_var.set(f"Freed: {freed_mb:.1f} MB · {self.percent:.1f}% in use.")
+            try:
+                if self.mascot is not None:
+                    self.mascot.celebrate(f"Freed {freed_mb:.1f} MB")
+            except Exception:
+                pass
+        except Exception as exc:
+            self.status_var.set(f"Optimize unavailable: {exc}")
         try:
             self.after(450, lambda: self.optimize_btn.configure(state="normal"))
         except Exception:

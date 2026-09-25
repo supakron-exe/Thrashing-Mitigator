@@ -4,6 +4,8 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 
 from ui.dashboard_tab import DashboardTab
+from ui.process_tab import ProcessTab
+from ui.thrashing_tab import ThrashingTab
 from ui.footer_status import StatusCard
 from ui.icons import get_nav_icon
 from ui.mascot import Mascot
@@ -223,9 +225,12 @@ class App(ctk.CTk):
         self.pages["Overview"].mascot = self.mascot
         self.pages["Overview"].grid(row=0, column=0, sticky="nsew")
 
+        self.pages["Thrashing"] = ThrashingTab(self.page_host)
+        self.pages["Processes"] = ProcessTab(self.page_host)
+        self.pages["Thrashing"].grid(row=0, column=0, sticky="nsew")
+        self.pages["Processes"].grid(row=0, column=0, sticky="nsew")
+
         descriptions = {
-            "Thrashing": "Live pressure monitoring and mitigation guidance will appear here.",
-            "Processes": "The process list and memory controls are part of Day 2.",
             "Simulator": "FIFO, LRU, OPT, LFU, and MFU simulations are part of Day 3.",
             "Paging + Partition": "Address translation and partition tools are part of Day 4.",
         }
